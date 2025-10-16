@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Jakość powietrza - {{ station }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>🌍 Jakość powietrza w {{ station }}</h1>
+
+    <form method="get" action="/">
+        <label for="station">Wybierz miasto:</label>
+        <select name="station" id="station">
+            {% for name in STATIONS %}
+                <option value="{{ name }}" {% if station == name %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Pokaż</button>
+    </form>
+
+    {% if index and index["stIndexLevel"] %}
+        <h2>Indeks jakości powietrza: <strong>{{ index["stIndexLevel"]["indexLevelName"] }}</strong></h2>
+        <p><em>Ostatnia aktualizacja: {{ index["stCalcDate"][:16]|replace('T',' ') }}</em></p>
+
+        <div id="map" style="height: 300px; margin: 20px 0;"></div>
+
+        <div class="legend">
+            <div><span class="color bd"></span> Bardzo dobry</div>
+            <div><span class="color d"></span> Dobry</div>
+            <div><span class="color u"></span> Umiarkowany</div>
+            <div><span class="color dts"></span> Dostateczny</div>
+            <div><span class="color zly"></span> Zły</div>
+            <div><span class="color bzly"></span> Bardzo zły</div>
+        </div>
+
+        <canvas id="chart" width="400" height="200"></canvas>
+
+        <h3>Szczegóły:</h3>
+        <ul>
+            {% for key, value in index.items() %}
+                {% if value is mapping and value["indexLevelName"] %}
+                    <li><strong>{{ key }}:</strong> {{ value["indexLevelName"] }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Brak danych dla wybranej stacji.</p>
+    {% endif %}
+
+    <form method="post" action="/generuj-raport">
+        <input type="hidden" name="station" value="{{ station }}">
+        <button type="submit">Generuj raport</button>
+    </form>
+</div>
+
+<script>
+    const lat = {{ lat }};
+    const lon = {{ lon }};
+    const map = L.map('map').setView([lat, lon], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+    }).addTo(map);
+    L.marker([lat, lon]).addTo(map).bindPopup("{{ station }}<br>{{ index['stIndexLevel']['indexLevelName'] }}").openPopup();
+
+    const chartData = {{ chart_data|tojson }};
+    const ctx = document.getElementById('chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: 'PM10 (µg/m³)',
+                data: chartData.pm10,
+                borderColor: 'orange',
+                fill: false
+            },
+            {
+                label: 'PM2.5 (µg/m³)',
+                data: chartData.pm25,
+                borderColor: 'red',
+                fill: false
+            }]
+        }
+    });
+</script>
+</body>
+</html>

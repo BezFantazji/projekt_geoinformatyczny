@@ -1,0 +1,7 @@
+Flask
+requests
+azure-storage-blob
+gunicorn
+pyodbc
+apscheduler
+reportlab
