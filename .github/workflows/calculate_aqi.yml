@@ -1,0 +1,38 @@
+name: Calculate AQI Values
+
+on:
+  schedule:
+    - cron: "5 * * * *"   # uruchamia się 5 minut po synchronizacji GIOŚ
+  workflow_dispatch:       # pozwala też ręcznie uruchomić
+
+jobs:
+  aqi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyodbc python-dotenv
+
+      - name: Install ODBC driver for SQL Server
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          sudo curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list -o /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
+
+      - name: Run AQI calculation script
+        env:
+          AZURE_SERVER: ${{ secrets.AZURE_SERVER }}
+          AZURE_DB: ${{ secrets.AZURE_DB }}
+          AZURE_USER: ${{ secrets.AZURE_USER }}
+          AZURE_PASS: ${{ secrets.AZURE_PASS }}
+        run: python backend/calculate_aqi.py
