@@ -1,0 +1,33 @@
+name: Sync GIOS Data to Azure SQL
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"  # co 3 godziny
+  workflow_dispatch:       # możliwość ręcznego uruchomienia z poziomu GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run GIOS data sync
+        env:
+          AZURE_SERVER: ${{ secrets.AZURE_SERVER }}
+          AZURE_DB: ${{ secrets.AZURE_DB }}
+          AZURE_USER: ${{ secrets.AZURE_USER }}
+          AZURE_PASS: ${{ secrets.AZURE_PASS }}
+        run: |
+          python backend/fetch_gios_to_sql.py
