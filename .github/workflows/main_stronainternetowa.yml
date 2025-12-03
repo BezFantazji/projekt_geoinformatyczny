@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: "StronaInternetowa"  # ← nazwa aplikacji w Azure
+  AZURE_WEBAPP_NAME: "stronainternetowa2"  # ← nazwa aplikacji w Azure
   PYTHON_VERSION: "3.10"                  # ← dopasuj do swojego runtime
 
 jobs:
@@ -37,3 +37,4 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C79FC7BC642A4F64BA6D0B6EFB8F6EC4 }}
           package: app.zip
+
