@@ -54,12 +54,16 @@ SQL_PORT = os.getenv("AZURE_PORT", "1433")
 
 
 CONN_STR = (
-    f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-    f"SERVER={SQL_SERVER},{SQL_PORT};"
-    f"DATABASE={SQL_DATABASE};"
-    f"UID={SQL_USERNAME};PWD={SQL_PASSWORD};"
-    "Encrypt=True;TrustServerCertificate=False;Connection Timeout=5;"
+    "Driver={ODBC Driver 18 for SQL Server};"
+    f"Server={SQL_SERVER},{SQL_PORT};"
+    f"Database={SQL_DATABASE};"
+    f"Uid={SQL_USERNAME};"
+    f"Pwd={SQL_PASSWORD};"
+    "Encrypt=yes;"
+    "TrustServerCertificate=yes;"
+    "Connection Timeout=30;"
 )
+
 
 def get_conn():
     try:
