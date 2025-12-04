@@ -20,19 +20,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Wysyłanie kodu jako artifact do joba deploy
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: .   # cały kod źródłowy
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: python-app
