@@ -53,7 +53,7 @@ SQL_PASSWORD = os.getenv("AZURE_PASS")
 SQL_PORT = os.getenv("AZURE_PORT", "1433")
 
 CONN_STR = (
-    f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+    f"DRIVER={{ODBC Driver 18 for SQL Server}};"
     f"SERVER={SQL_SERVER},{SQL_PORT};"
     f"DATABASE={SQL_DATABASE};"
     f"UID={SQL_USERNAME};PWD={SQL_PASSWORD};"
