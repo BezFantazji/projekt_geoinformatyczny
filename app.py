@@ -62,10 +62,15 @@ CONN_STR = (
 
 def get_conn():
     """Zwraca połączenie do SQL lub None w razie braku połączenia."""
+
     try:
         return pyodbc.connect(CONN_STR, timeout=5)
     except Exception as e:
         print("Database connection failed:", e)
+        return None
+
+    except Exception as e:
+        print("DB fail:" , repr(e))
         return None
 
 # ----------------------------------------------------------
