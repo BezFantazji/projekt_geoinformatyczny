@@ -104,11 +104,11 @@ def index():
 
     cur = conn.cursor()
     cur.execute("""
-        SELECT TOP 30 data, pm10, pm25
-        FROM pomiar
-        WHERE stacja = ? AND pm10 IS NOT NULL AND pm25 IS NOT NULL
-        ORDER BY data DESC
-    """, city)
+        SELECT TOP 30 Date, PM10, PM25
+        FROM Measurements
+        WHERE StationId = ?
+        ORDER BY Date DESC
+    """, info['id'])
 
     rows = cur.fetchall()[::-1]
 
