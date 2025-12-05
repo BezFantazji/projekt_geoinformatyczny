@@ -1,11 +1,3 @@
-print(">>> LOADING APP.PY FROM DEPLOYMENT <<<")
-
-print("SQL_SERVER =", SQL_SERVER)
-
-print("CONN_STR =", CONN_STR)
-
-# 
-
 from flask import Flask, render_template, request, make_response
 import os
 import pyodbc
@@ -21,10 +13,38 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib import colors
 
 # ----------------------------------------------------------
-# 1. KONFIGURACJA APLIKACJI
+# 1. KONFIGURACJA POŁĄCZENIA DO SQL Z .ENV
+# ----------------------------------------------------------
+
+SQL_SERVER = os.getenv("AZURE_SERVER")
+SQL_DATABASE = os.getenv("AZURE_DB")
+SQL_USERNAME = os.getenv("AZURE_USER")
+SQL_PASSWORD = os.getenv("AZURE_PASS")
+SQL_PORT = os.getenv("AZURE_PORT", "1433")
+
+CONN_STR = (
+    "Driver={ODBC Driver 18 for SQL Server};"
+    f"Server={SQL_SERVER},{SQL_PORT};"
+    f"Database={SQL_DATABASE};"
+    f"Uid={SQL_USERNAME};"
+    f"Pwd={SQL_PASSWORD};"
+    "Encrypt=yes;"
+    "TrustServerCertificate=yes;"
+    "Connection Timeout=30;"
+)
+
+print(">>> ENV LOADED <<<")
+print("SQL_SERVER =", SQL_SERVER)
+print("SQL_DATABASE =", SQL_DATABASE)
+print("SQL_USERNAME =", SQL_USERNAME)
+print("CONN_STR =", CONN_STR)
+
+# ----------------------------------------------------------
+# 2. APLIKACJA
 # ----------------------------------------------------------
 
 app = Flask(__name__)
+
 
 # Stacje – na razie statyczne (można przenieść do SQL później)
 STATIONS = {
@@ -53,24 +73,6 @@ STATIONS = {
 # ----------------------------------------------------------
 # 2. KONFIGURACJA POŁĄCZENIA DO SQL Z .ENV
 # ----------------------------------------------------------
-
-SQL_SERVER = os.getenv("AZURE_SERVER")
-SQL_DATABASE = os.getenv("AZURE_DB")
-SQL_USERNAME = os.getenv("AZURE_USER")
-SQL_PASSWORD = os.getenv("AZURE_PASS")
-SQL_PORT = os.getenv("AZURE_PORT", "1433")
-
-
-CONN_STR = (
-    "Driver={ODBC Driver 18 for SQL Server};"
-    f"Server={SQL_SERVER},{SQL_PORT};"
-    f"Database={SQL_DATABASE};"
-    f"Uid={SQL_USERNAME};"
-    f"Pwd={SQL_PASSWORD};"
-    "Encrypt=yes;"
-    "TrustServerCertificate=yes;"
-    "Connection Timeout=30;"
-)
 
 
 def get_conn():
