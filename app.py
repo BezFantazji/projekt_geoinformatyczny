@@ -13,40 +13,11 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib import colors
 
 # ----------------------------------------------------------
-# 1. KONFIGURACJA POŁĄCZENIA DO SQL Z .ENV
-# ----------------------------------------------------------
-
-SQL_SERVER = os.getenv("AZURE_SERVER")
-SQL_DATABASE = os.getenv("AZURE_DB")
-SQL_USERNAME = os.getenv("AZURE_USER")
-SQL_PASSWORD = os.getenv("AZURE_PASS")
-SQL_PORT = os.getenv("AZURE_PORT", "1433")
-
-CONN_STR = (
-    "Driver={ODBC Driver 18 for SQL Server};"
-    f"Server={SQL_SERVER},{SQL_PORT};"
-    f"Database={SQL_DATABASE};"
-    f"Uid={SQL_USERNAME};"
-    f"Pwd={SQL_PASSWORD};"
-    "Encrypt=yes;"
-    "TrustServerCertificate=yes;"
-    "Connection Timeout=30;"
-)
-
-print(">>> ENV LOADED <<<")
-print("SQL_SERVER =", SQL_SERVER)
-print("SQL_DATABASE =", SQL_DATABASE)
-print("SQL_USERNAME =", SQL_USERNAME)
-print("CONN_STR =", CONN_STR)
-
-# ----------------------------------------------------------
-# 2. APLIKACJA
+# 1. KONFIGURACJA APLIKACJI
 # ----------------------------------------------------------
 
 app = Flask(__name__)
 
-
-# Stacje – na razie statyczne (można przenieść do SQL później)
 STATIONS = {
     "Warszawa": {"id": 52, "lat": 52.2298, "lon": 21.0118},
     "Kraków": {"id": 400, "lat": 50.0647, "lon": 19.9450},
@@ -71,14 +42,30 @@ STATIONS = {
 }
 
 # ----------------------------------------------------------
-# 2. KONFIGURACJA POŁĄCZENIA DO SQL Z .ENV
+# 2. KONFIGURACJA SQL – POPRAWNA I STABILNA
 # ----------------------------------------------------------
 
+SQL_SERVER = os.getenv("AZURE_SERVER")              # np. aqi-sql-server-jeremi.database.windows.net
+SQL_DATABASE = os.getenv("AZURE_DB")                # AQI_DB
+SQL_USERNAME = os.getenv("AZURE_USER")              # adminJeremi@aqi-sql-server-jeremi
+SQL_PASSWORD = os.getenv("AZURE_PASS")              # hasło
+SQL_PORT = os.getenv("AZURE_PORT", "1433")
+
+CONN_STR = (
+    "Driver={ODBC Driver 18 for SQL Server};"
+    f"Server=tcp:{SQL_SERVER},{SQL_PORT};"
+    f"Database={SQL_DATABASE};"
+    f"Uid={SQL_USERNAME};"
+    f"Pwd={SQL_PASSWORD};"
+    "Encrypt=yes;"
+    "TrustServerCertificate=yes;"
+    "Connection Timeout=30;"
+)
 
 def get_conn():
+    """Zwraca połączenie do SQL lub None"""
     try:
-        print("Connecting with:", CONN_STR)
-        return pyodbc.connect(CONN_STR, timeout=5)
+        return pyodbc.connect(CONN_STR)
     except Exception as e:
         print("DB ERROR:", repr(e))
         return None
@@ -95,24 +82,27 @@ def index():
     if not info:
         return "Stacja nieznaleziona", 404
 
-    # Pobranie indeksu jakości powietrza z GIOŚ
+    # --- Pobranie indeksu GIOŚ ---
     try:
-        idx = requests.get(f"https://api.gios.gov.pl/pjp-api/rest/aqindex/getIndex/{info['id']}").json()
-    except Exception:
+        idx = requests.get(
+            f"https://api.gios.gov.pl/pjp-api/rest/aqindex/getIndex/{info['id']}"
+        ).json()
+    except:
         idx = {}
 
-    # Pobranie danych z SQL
+    # --- Pobranie danych z SQL ---
     conn = get_conn()
     if conn is None:
         return "Błąd połączenia z bazą danych", 500
 
     cur = conn.cursor()
+
     cur.execute("""
         SELECT TOP 30 Date, PM10, PM25
         FROM Measurements
         WHERE StationId = ?
         ORDER BY Date DESC
-    """, info['id'])
+    """, info["id"])
 
     rows = cur.fetchall()[::-1]
 
@@ -136,7 +126,7 @@ def index():
     )
 
 # ----------------------------------------------------------
-# 4. GENEROWANIE RAPORTU
+# 4. GENEROWANIE RAPORTU PDF
 # ----------------------------------------------------------
 
 @app.route("/generuj-raport", methods=["POST"])
@@ -147,7 +137,9 @@ def generuj_raport():
     if not info:
         return "Stacja nieznaleziona", 404
 
-    idx = requests.get(f"https://api.gios.gov.pl/pjp-api/rest/aqindex/getIndex/{info['id']}").json()
+    idx = requests.get(
+        f"https://api.gios.gov.pl/pjp-api/rest/aqindex/getIndex/{info['id']}"
+    ).json()
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
@@ -165,7 +157,7 @@ def generuj_raport():
 
     doc.build(elems)
 
-    # Zapisywanie PDF do Azure Blob Storage
+    # upload to blob
     try:
         blob = BlobServiceClient.from_connection_string(os.getenv("AZURE_STORAGE_CONNECTION_STRING"))
         container = blob.get_container_client("reports")
@@ -181,9 +173,8 @@ def generuj_raport():
     return resp
 
 # ----------------------------------------------------------
-# 5. START SERWERA (bez fetch_and_store, bez scheduler!)
+# 5. URUCHOMIENIE APLIKACJI
 # ----------------------------------------------------------
 
 if __name__ == "__main__":
-    # NIE URUCHAMIAMY fetch_and_store – to robi GitHub Actions
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8080)), debug=False)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "8080")), debug=False)
