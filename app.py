@@ -1,3 +1,9 @@
+print(">>> LOADING APP.PY FROM DEPLOYMENT <<<")
+
+print("SQL_SERVER =", SQL_SERVER)
+
+print("CONN_STR =", CONN_STR)
+
 from flask import Flask, render_template, request, make_response
 import os
 import pyodbc
